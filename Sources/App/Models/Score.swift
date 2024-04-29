@@ -16,10 +16,10 @@ final class Score: Model, Content {
     var id: UUID?
 
     @Field(key: "room_id")
-    var roomId: String
+    var roomId: UUID
     
     @Field(key: "user_id")
-    var userId: String
+    var userId: UUID
     
     @Field(key: "score")
     var score: String
@@ -29,7 +29,7 @@ final class Score: Model, Content {
     
     init() { }
 
-    init(id: UUID? = nil, roomId: String, userId: String, score: String, tiles: String) {
+    init(id: UUID? = nil, roomId: UUID, userId: UUID, score: String, tiles: String) {
         self.id = id
         self.roomId = roomId
         self.userId = userId

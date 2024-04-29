@@ -26,7 +26,7 @@ final class Room: Model, Content {
     var inviteCode: String?
     
     @Field(key: "admin_id")
-    var adminId: String
+    var adminId: UUID
     
     @Field(key: "started")
     var started: Bool
@@ -42,9 +42,9 @@ final class Room: Model, Content {
     init(
         id: UUID? = nil,
         name: String,
-        roomId: String,
+        roomId: String = "",
         inviteCode: String?,
-        adminId: String,
+        adminId: UUID,
         started: Bool,
         paused: Bool,
         availableTiles: String

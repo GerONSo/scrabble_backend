@@ -16,14 +16,14 @@ final class Turn: Model, Content {
     var id: UUID?
 
     @Field(key: "room_id")
-    var roomId: String
+    var roomId: UUID
     
     @Field(key: "current_turn_user_id")
     var currentTurnUserId: String
 
     init() { }
 
-    init(id: UUID? = nil, roomId: String, currentTurnUserId: String) {
+    init(id: UUID? = nil, roomId: UUID, currentTurnUserId: String) {
         self.id = id
         self.roomId = roomId
         self.currentTurnUserId = currentTurnUserId

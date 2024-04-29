@@ -16,7 +16,7 @@ final class User: Model, Content {
     var id: UUID?
 
     @Field(key: "user_id")
-    var userId: String
+    var userId: UUID
     
     @Field(key: "login")
     var login: String
@@ -26,7 +26,7 @@ final class User: Model, Content {
 
     init() { }
 
-    init(id: UUID? = nil, userId: String, login: String, password: String) {
+    init(id: UUID? = nil, userId: UUID, login: String, password: String) {
         self.id = id
         self.userId = userId
         self.login = login

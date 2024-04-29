@@ -16,10 +16,10 @@ final class Word: Model, Content {
     var id: UUID?
 
     @Field(key: "room_id")
-    var roomId: String
+    var roomId: UUID
     
     @Field(key: "user_id")
-    var userId: String
+    var userId: UUID
     
     @Field(key: "word")
     var word: String
@@ -35,7 +35,7 @@ final class Word: Model, Content {
     
     init() { }
 
-    init(id: UUID? = nil, roomId: String, userId: String, word: String, positionX: String, positionY: String, direction: Direction) {
+    init(id: UUID? = nil, roomId: UUID, userId: UUID, word: String, positionX: String, positionY: String, direction: Direction) {
         self.id = id
         self.roomId = roomId
         self.userId = userId
