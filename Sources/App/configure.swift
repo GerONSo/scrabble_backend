@@ -20,5 +20,6 @@ public func configure(_ app: Application) async throws {
         as: .psql
     )
     app.migrations.add(CreateGalaxy())
+    app.migrations.add(createMigrations())
     try routes(app)
 }
