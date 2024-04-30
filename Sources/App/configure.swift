@@ -21,7 +21,6 @@ public func configure(_ app: Application) async throws {
         ),
         as: .psql
     )
-    app.migrations.add(CreateGalaxy())
     app.migrations.add(createMigrations())
     
     app.jwt.signers.use(.hs256(key: "secret"))
