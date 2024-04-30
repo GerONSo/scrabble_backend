@@ -85,8 +85,8 @@ struct CreateWords: AsyncMigration {
             .field("room_id", .uuid, .required)
             .field("user_id", .uuid, .required)
             .field("word", .string, .required)
-            .field("position_x", .string, .required)
-            .field("position_y", .string, .required)
+            .field("position_x", .int, .required)
+            .field("position_y", .int, .required)
             .field("direction", direction, .required)
             .create()
     }

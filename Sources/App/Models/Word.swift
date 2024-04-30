@@ -25,17 +25,17 @@ final class Word: Model, Content {
     var word: String
     
     @Field(key: "position_x")
-    var positionX: String
+    var positionX: Int
     
     @Field(key: "position_y")
-    var positionY: String
+    var positionY: Int
     
     @Enum(key: "direction")
     var direction: WordDirection
     
     init() { }
 
-    init(id: UUID? = nil, roomId: UUID, userId: UUID, word: String, positionX: String, positionY: String, direction: WordDirection) {
+    init(id: UUID? = nil, roomId: UUID, userId: UUID, word: String, positionX: Int, positionY: Int, direction: WordDirection) {
         self.id = id
         self.roomId = roomId
         self.userId = userId
