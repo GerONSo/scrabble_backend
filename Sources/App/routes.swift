@@ -1,5 +1,7 @@
 import Vapor
 import Fluent
+import JWTKit
+import JWT
 
 func routes(_ app: Application) throws {
     
@@ -42,6 +44,37 @@ func routes(_ app: Application) throws {
 //    }
     
     
+    // MARK: -auth
+    app.post("register") { req -> EventLoopFuture<User> in
+        let userReq = try req.content.decode(UserReq.self)
+        let user = User(id: UUID(), userId: UUID(), login: userReq.login, password: userReq.password)
+        return user.save(on: req.db).map { user }
+    }
+    
+    app.post("login") { req -> EventLoopFuture<String> in
+        let userReq = try req.content.decode(UserReq.self)
+//        let user = User(id: nil, userId: nil, login: userReq.login, password: userReq.password)
+        
+        return User.query(on: req.db)
+            .filter(\.$login == userReq.login)
+            .filter(\.$password == userReq.password)
+            .first()
+            .flatMapThrowing { user -> String in
+                guard let user = user else {
+                    throw Abort(.unauthorized)
+                }
+                
+                let userToken = User.Payload(userId: user.userId)
+                let jwt = try req.jwt.sign(userToken) // использовать метод sign у JWTSigner
+//                let token = try jwt.sign()
+    
+                return jwt
+            }
+    }
+    
+    app.get("users") { req async throws in
+        try await User.query(on: req.db).all()
+    }
     
     // TODO remove
     app.get("galaxies") { req async throws in

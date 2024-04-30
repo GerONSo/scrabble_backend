@@ -8,6 +8,7 @@
 import Foundation
 import FluentPostgresDriver
 import Vapor
+import JWT
 
 final class User: Model, Content {
     static let schema = "users"
@@ -26,7 +27,7 @@ final class User: Model, Content {
 
     init() { }
 
-    init(id: UUID? = nil, userId: UUID, login: String, password: String) {
+    init(id: UUID? = UUID(), userId: UUID, login: String, password: String) {
         self.id = id
         self.userId = userId
         self.login = login
@@ -34,3 +35,34 @@ final class User: Model, Content {
     }
 }
 
+extension User {
+    func toPublic() -> User.Public {
+        return User.Public(id: self.id!, login: self.login)
+    }
+    
+    struct Public: Content {
+        var id: UUID
+        var login: String
+    }
+    
+    struct Payload: JWTPayload {
+        var userId: UUID
+        
+        func verify(using signer: JWTSigner) throws {
+        }
+    }
+}
+
+extension User: Authenticatable {
+}
+
+
+final class UserReq: Content {
+    var login: String    
+    var password: String
+
+    init(login: String, password: String) {
+        self.login = login
+        self.password = password
+    }
+}
