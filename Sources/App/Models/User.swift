@@ -9,6 +9,7 @@ import Foundation
 import FluentPostgresDriver
 import Vapor
 import JWT
+import Fluent
 
 final class User: Model, Content {
     static let schema = "users"
@@ -45,7 +46,7 @@ extension User {
         var login: String
     }
     
-    struct Payload: JWTPayload {
+    struct Payload: JWTPayload, Authenticatable {
         var userId: UUID
         
         func verify(using signer: JWTSigner) throws {
@@ -53,7 +54,17 @@ extension User {
     }
 }
 
-extension User: Authenticatable {
+//extension User: Authenticatable {
+//}
+
+extension User: ModelAuthenticatable {
+    
+    static let usernameKey = \User.$login
+    static let passwordHashKey = \User.$password
+
+    func verify(password: String) throws -> Bool {
+        return password == self.password
+    }
 }
 
 

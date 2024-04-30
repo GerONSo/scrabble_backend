@@ -5,7 +5,8 @@ import JWT
 
 func routes(_ app: Application) throws {
     
-    app.post("rooms", "create") { req async throws -> RoomCreateResponse in
+    let auth = app.grouped(User.Payload.authenticator(), User.Payload.guardMiddleware())
+    auth.post("rooms", "create") { req async throws -> RoomCreateResponse in
         let request = try req.content.decode(RoomCreateRequest.self)
         
         guard let userId = request.userId.toUUID() else {
@@ -37,7 +38,7 @@ func routes(_ app: Application) throws {
         return RoomCreateResponse(roomId: newRoomId)
     }
     
-    app.get("rooms", "get_users") { req async throws -> RoomGetUsersResponse in
+    auth.get("rooms", "get_users") { req async throws -> RoomGetUsersResponse in
         let request = try req.content.decode(RoomRequest.self)
         guard let roomId = request.roomId.toUUID() else {
             throw Abort(.badRequest)
@@ -61,7 +62,7 @@ func routes(_ app: Application) throws {
         return RoomGetUsersResponse(users: users, adminUserId: adminId)
     }
     
-    app.post("rooms", "join") { req async throws -> DefaultResponse in
+    auth.post("rooms", "join") { req async throws -> DefaultResponse in
         let request = try req.content.decode(RoomJoinRequest.self)
         
         guard let userId = request.userId.toUUID() else {
@@ -83,7 +84,7 @@ func routes(_ app: Application) throws {
         return DefaultResponse(success: true)
     }
     
-    app.post("rooms", "kick") { req async throws -> DefaultResponse in
+    auth.post("rooms", "kick") { req async throws -> DefaultResponse in
         let request = try req.content.decode(RoomKickRequest.self)
         
         guard let userId = request.userId.toUUID() else {
@@ -102,7 +103,7 @@ func routes(_ app: Application) throws {
         return DefaultResponse(success: true)
     }
     
-    app.post("rooms", "start") { req async throws -> DefaultResponse in
+    auth.post("rooms", "start") { req async throws -> DefaultResponse in
         let request = try req.content.decode(RoomRequest.self)
         
         guard let roomId = request.roomId.toUUID() else {
@@ -117,7 +118,7 @@ func routes(_ app: Application) throws {
         return DefaultResponse(success: true)
     }
     
-    app.post("rooms", "pause") { req async throws -> DefaultResponse in
+    auth.post("rooms", "pause") { req async throws -> DefaultResponse in
         let request = try req.content.decode(RoomRequest.self)
         
         guard let roomId = request.roomId.toUUID() else {
@@ -132,7 +133,7 @@ func routes(_ app: Application) throws {
         return DefaultResponse(success: true)
     }
     
-    app.post("rooms", "unpause") { req async throws -> DefaultResponse in
+    auth.post("rooms", "unpause") { req async throws -> DefaultResponse in
         let request = try req.content.decode(RoomRequest.self)
         
         guard let roomId = request.roomId.toUUID() else {
@@ -147,7 +148,7 @@ func routes(_ app: Application) throws {
         return DefaultResponse(success: true)
     }
     
-    app.post("rooms", "close") { req async throws -> DefaultResponse in
+    auth.post("rooms", "close") { req async throws -> DefaultResponse in
         let request = try req.content.decode(RoomRequest.self)
         
         guard let roomId = request.roomId.toUUID() else {
@@ -165,7 +166,7 @@ func routes(_ app: Application) throws {
         return DefaultResponse(success: true)
     }
     
-    app.get("rooms", "all") { req async throws -> RoomAllResponse in
+    auth.get("rooms", "all") { req async throws -> RoomAllResponse in
         
         let allRooms: [RoomDTO] = try await req.db.query(Room.self)
             .filter(\.$inviteCode == .null)
@@ -188,7 +189,6 @@ func routes(_ app: Application) throws {
     
     app.post("login") { req -> EventLoopFuture<String> in
         let userReq = try req.content.decode(UserReq.self)
-        //        let user = User(id: nil, userId: nil, login: userReq.login, password: userReq.password)
         
         return User.query(on: req.db)
             .filter(\.$login == userReq.login)
@@ -200,14 +200,43 @@ func routes(_ app: Application) throws {
                 }
                 
                 let userToken = User.Payload(userId: user.userId)
-                let jwt = try req.jwt.sign(userToken) // использовать метод sign у JWTSigner
-                //                let token = try jwt.sign()
-                
+                let jwt = try req.jwt.sign(userToken) as String // явно указываем тип String
                 return jwt
             }
     }
     
-    app.get("users") { req async throws in
-        try await User.query(on: req.db).all()
+//    let auth = app.grouped(User.Payload.authenticator(), User.Payload.guardMiddleware())
+    
+//    auth.get("sign-in") { req in
+//        return User.query(on: req.db)
+//            .all()
+//            .map { users in
+//                return users
+//            }
+//    }
+    
+    
+
+    auth.get("users") { req in
+        // Verify the JWT token and extract the payload
+        let userPayload = try req.auth.require(User.Payload.self)
+
+        // You can now use the payload information for authorization logic
+
+        return User.query(on: req.db)
+            .all()
+            .map { users in
+                return users
+            }
+            .flatMapErrorThrowing { error in
+                throw Abort(.unauthorized, reason: "Invalid token or unauthorized access")
+            }
     }
+
+    
+//    app.get("users") { req async throws in
+//        
+//        try await User.query(on: req.db).all()
+//    }
 }
+
