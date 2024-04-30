@@ -1,9 +1,12 @@
 import Vapor
 import Fluent
+import JWTKit
+import JWT
 
 func routes(_ app: Application) throws {
     
-    app.post("rooms", "create") { req async throws -> RoomCreateResponse in
+    let auth = app.grouped(User.Payload.authenticator(), User.Payload.guardMiddleware())
+    auth.post("rooms", "create") { req async throws -> RoomCreateResponse in
         let request = try req.content.decode(RoomCreateRequest.self)
         
         guard let userId = request.userId.toUUID() else {
@@ -35,7 +38,7 @@ func routes(_ app: Application) throws {
         return RoomCreateResponse(roomId: newRoomId)
     }
     
-    app.get("rooms", "get_users") { req async throws -> RoomGetUsersResponse in
+    auth.get("rooms", "get_users") { req async throws -> RoomGetUsersResponse in
         let request = try req.content.decode(RoomRequest.self)
         guard let roomId = request.roomId.toUUID() else {
             throw Abort(.badRequest)
@@ -59,7 +62,7 @@ func routes(_ app: Application) throws {
         return RoomGetUsersResponse(users: users, adminUserId: adminId)
     }
     
-    app.post("rooms", "join") { req async throws -> DefaultResponse in
+    auth.post("rooms", "join") { req async throws -> DefaultResponse in
         let request = try req.content.decode(RoomJoinRequest.self)
         
         guard let userId = request.userId.toUUID() else {
@@ -90,7 +93,7 @@ func routes(_ app: Application) throws {
         return DefaultResponse(success: true)
     }
     
-    app.post("rooms", "kick") { req async throws -> DefaultResponse in
+    auth.post("rooms", "kick") { req async throws -> DefaultResponse in
         let request = try req.content.decode(RoomKickRequest.self)
         
         guard let userId = request.userId.toUUID() else {
@@ -109,7 +112,7 @@ func routes(_ app: Application) throws {
         return DefaultResponse(success: true)
     }
     
-    app.post("rooms", "start") { req async throws -> DefaultResponse in
+    auth.post("rooms", "start") { req async throws -> DefaultResponse in
         let request = try req.content.decode(RoomRequest.self)
         
         guard let roomId = request.roomId.toUUID() else {
@@ -136,7 +139,7 @@ func routes(_ app: Application) throws {
         return DefaultResponse(success: true)
     }
     
-    app.post("rooms", "pause") { req async throws -> DefaultResponse in
+    auth.post("rooms", "pause") { req async throws -> DefaultResponse in
         let request = try req.content.decode(RoomRequest.self)
         
         guard let roomId = request.roomId.toUUID() else {
@@ -151,7 +154,7 @@ func routes(_ app: Application) throws {
         return DefaultResponse(success: true)
     }
     
-    app.post("rooms", "unpause") { req async throws -> DefaultResponse in
+    auth.post("rooms", "unpause") { req async throws -> DefaultResponse in
         let request = try req.content.decode(RoomRequest.self)
         
         guard let roomId = request.roomId.toUUID() else {
@@ -166,7 +169,7 @@ func routes(_ app: Application) throws {
         return DefaultResponse(success: true)
     }
     
-    app.post("rooms", "close") { req async throws -> DefaultResponse in
+    auth.post("rooms", "close") { req async throws -> DefaultResponse in
         let request = try req.content.decode(RoomRequest.self)
         
         guard let roomId = request.roomId.toUUID() else {
@@ -184,7 +187,7 @@ func routes(_ app: Application) throws {
         return DefaultResponse(success: true)
     }
     
-    app.get("rooms", "all") { req async throws -> RoomAllResponse in
+    auth.get("rooms", "all") { req async throws -> RoomAllResponse in
         
         let allRooms: [RoomDTO] = try await req.db.query(Room.self)
             .filter(\.$inviteCode == .null)
@@ -332,4 +335,30 @@ func routes(_ app: Application) throws {
             currentTurnUserId: currentUserId?.currentTurnUserId
         )
     }
+
+    // MARK: -auth
+    app.post("register") { req -> EventLoopFuture<User> in
+        let userReq = try req.content.decode(UserReq.self)
+        let user = User(id: UUID(), userId: UUID(), login: userReq.login, password: userReq.password)
+        return user.save(on: req.db).map { user }
+    }
+    
+    app.post("login") { req -> EventLoopFuture<String> in
+        let userReq = try req.content.decode(UserReq.self)
+        
+        return User.query(on: req.db)
+            .filter(\.$login == userReq.login)
+            .filter(\.$password == userReq.password)
+            .first()
+            .flatMapThrowing { user -> String in
+                guard let user = user else {
+                    throw Abort(.unauthorized)
+                }
+                
+                let userToken = User.Payload(userId: user.userId)
+                let jwt = try req.jwt.sign(userToken) as String // явно указываем тип String
+                return jwt
+            }
+    }
 }
+
