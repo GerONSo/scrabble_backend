@@ -19,11 +19,11 @@ final class Turn: Model, Content {
     var roomId: UUID
     
     @Field(key: "current_turn_user_id")
-    var currentTurnUserId: String
+    var currentTurnUserId: UUID
 
     init() { }
 
-    init(id: UUID? = nil, roomId: UUID, currentTurnUserId: String) {
+    init(id: UUID? = nil, roomId: UUID, currentTurnUserId: UUID) {
         self.id = id
         self.roomId = roomId
         self.currentTurnUserId = currentTurnUserId

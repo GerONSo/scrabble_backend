@@ -20,9 +20,9 @@ struct CreateRooms: AsyncMigration {
             .field("room_id", .string, .required)
             .field("invite_code", .string)
             .field("name", .string, .required)
-            .field("admin_id", .string, .required)
-            .field("started", .string, .required)
-            .field("paused", .string, .required)
+            .field("admin_id", .uuid, .required)
+            .field("started", .bool, .required)
+            .field("paused", .bool, .required)
             .field("available_tiles", .string, .required)
             .create()
     }
@@ -36,8 +36,8 @@ struct CreateScores: AsyncMigration {
     func prepare(on database: Database) async throws {
         try await database.schema(Score.schema)
             .id()
-            .field("room_id", .string, .required)
-            .field("user_id", .string, .required)
+            .field("room_id", .uuid, .required)
+            .field("user_id", .uuid, .required)
             .field("score", .string, .required)
             .field("tiles", .string, .required)
             .create()
@@ -52,8 +52,8 @@ struct CreateTurns: AsyncMigration {
     func prepare(on database: Database) async throws {
         try await database.schema(Turn.schema)
             .id()
-            .field("room_id", .string, .required)
-            .field("current_turn_user_id", .string, .required)
+            .field("room_id", .uuid, .required)
+            .field("current_turn_user_id", .uuid, .required)
             .create()
     }
 
@@ -66,7 +66,7 @@ struct CreateUsers: AsyncMigration {
     func prepare(on database: Database) async throws {
         try await database.schema(User.schema)
             .id()
-            .field("user_id", .string, .required)
+            .field("user_id", .uuid, .required)
             .field("login", .string, .required)
             .field("password", .string, .required)
             .create()
@@ -79,14 +79,11 @@ struct CreateUsers: AsyncMigration {
 
 struct CreateWords: AsyncMigration {
     func prepare(on database: Database) async throws {
-        let direction = try await database.enum("direction")
-            .case(Word.Direction.Right.rawValue)
-            .case(Word.Direction.Down.rawValue)
-            .create()
+        let direction = try await database.enum("direction").read()
         try await database.schema(Word.schema)
             .id()
-            .field("room_id", .string, .required)
-            .field("user_id", .string, .required)
+            .field("room_id", .uuid, .required)
+            .field("user_id", .uuid, .required)
             .field("word", .string, .required)
             .field("position_x", .string, .required)
             .field("position_y", .string, .required)

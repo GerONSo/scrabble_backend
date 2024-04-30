@@ -10,6 +10,6 @@ import Foundation
 
 extension String {
     func toUUID() -> UUID? {
-        UUID.init(uuidString: self)
+        return UUID.init(uuidString: self)
     }
 }

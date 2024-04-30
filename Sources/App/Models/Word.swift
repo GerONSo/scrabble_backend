@@ -31,11 +31,11 @@ final class Word: Model, Content {
     var positionY: String
     
     @Enum(key: "direction")
-    var direction: Direction
+    var direction: WordDirection
     
     init() { }
 
-    init(id: UUID? = nil, roomId: UUID, userId: UUID, word: String, positionX: String, positionY: String, direction: Direction) {
+    init(id: UUID? = nil, roomId: UUID, userId: UUID, word: String, positionX: String, positionY: String, direction: WordDirection) {
         self.id = id
         self.roomId = roomId
         self.userId = userId
@@ -45,7 +45,7 @@ final class Word: Model, Content {
         self.direction = direction
     }
     
-    enum Direction: String, Codable, Equatable {
+    enum WordDirection: String, Codable, Equatable {
         case Right = "r"
         case Down = "d"
     }

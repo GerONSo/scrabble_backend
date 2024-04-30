@@ -10,6 +10,5 @@ import Vapor
 
 struct UserDTO: Content {
     var id: UUID?
-    
-    
+    var name: String
 }
