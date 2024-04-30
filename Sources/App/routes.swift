@@ -2,7 +2,8 @@ import Vapor
 import Fluent
 import JWTKit
 import JWT
-
+//import CVaporBcrypt
+import BCrypt
 func routes(_ app: Application) throws {
     
     let auth = app.grouped(User.Payload.authenticator(), User.Payload.guardMiddleware())
@@ -183,27 +184,33 @@ func routes(_ app: Application) throws {
     // MARK: -auth
     app.post("register") { req -> EventLoopFuture<User> in
         let userReq = try req.content.decode(UserReq.self)
-        let user = User(id: UUID(), userId: UUID(), login: userReq.login, password: userReq.password)
+        guard let hashedPassword = try? BCrypt.hash(userReq.password) else {
+            throw Abort(.internalServerError)
+        }
+        let user = User(id: UUID(), userId: UUID(), login: userReq.login, password: hashedPassword)
         return user.save(on: req.db).map { user }
     }
-    
+
     app.post("login") { req -> EventLoopFuture<String> in
         let userReq = try req.content.decode(UserReq.self)
-        
+
         return User.query(on: req.db)
             .filter(\.$login == userReq.login)
-            .filter(\.$password == userReq.password)
             .first()
             .flatMapThrowing { user -> String in
                 guard let user = user else {
                     throw Abort(.unauthorized)
                 }
-                
-                let userToken = User.Payload(userId: user.userId)
-                let jwt = try req.jwt.sign(userToken) as String // явно указываем тип String
-                return jwt
+                if try BCrypt.verify(userReq.password, created: user.password) {
+                    let userToken = User.Payload(userId: user.userId)
+                    let jwt = try req.jwt.sign(userToken) as String
+                    return jwt
+                } else {
+                    throw Abort(.unauthorized)
+                }
             }
     }
+
     
 //    let auth = app.grouped(User.Payload.authenticator(), User.Payload.guardMiddleware())
     

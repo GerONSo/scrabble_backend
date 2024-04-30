@@ -19,12 +19,48 @@
       }
     },
     {
+      "identity" : "bcrypt",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/vapor/bcrypt.git",
+      "state" : {
+        "revision" : "a36b6f0381f2edb9fb32b8882ebc801ba8db10ef",
+        "version" : "1.1.1"
+      }
+    },
+    {
+      "identity" : "bits",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/vapor/bits.git",
+      "state" : {
+        "revision" : "03079476b04139a8b744ad96f975176df5ae12bc",
+        "version" : "1.1.1"
+      }
+    },
+    {
       "identity" : "console-kit",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/console-kit.git",
       "state" : {
         "revision" : "a31f44ebfbd15a2cc0fda705279676773ac16355",
         "version" : "4.14.1"
+      }
+    },
+    {
+      "identity" : "core",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/vapor/core.git",
+      "state" : {
+        "revision" : "aa15871311b497a24a7f0e96b1ae6865dd600818",
+        "version" : "2.2.1"
+      }
+    },
+    {
+      "identity" : "debugging",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/vapor/debugging.git",
+      "state" : {
+        "revision" : "fc5a27d6eb236141dc24e5f14eedaa2e035ae7b3",
+        "version" : "1.1.1"
       }
     },
     {
@@ -97,6 +133,15 @@
       "state" : {
         "revision" : "e345cbb9cf6052b37b27c0c4f976134fc01dbe15",
         "version" : "1.21.1"
+      }
+    },
+    {
+      "identity" : "random",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/vapor/random.git",
+      "state" : {
+        "revision" : "d7c4397d125caba795d14d956efacfe2a27a63d0",
+        "version" : "1.2.0"
       }
     },
     {
