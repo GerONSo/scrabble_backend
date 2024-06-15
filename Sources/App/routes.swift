@@ -191,20 +191,20 @@ func routes(_ app: Application) throws {
         return user.save(on: req.db).map { user }
     }
 
-    app.post("login") { req -> EventLoopFuture<String> in
+    app.post("login") { req -> EventLoopFuture<LoginResponse> in
         let userReq = try req.content.decode(UserReq.self)
 
         return User.query(on: req.db)
             .filter(\.$login == userReq.login)
             .first()
-            .flatMapThrowing { user -> String in
+            .flatMapThrowing { user -> LoginResponse in
                 guard let user = user else {
                     throw Abort(.unauthorized)
                 }
-                if try BCrypt.verify(userReq.password, created: user.password) {
+                if try Bcrypt.verify(userReq.password, created: user.password) {
                     let userToken = User.Payload(userId: user.userId)
                     let jwt = try req.jwt.sign(userToken) as String
-                    return jwt
+                    return LoginResponse(userid: user.userId.uuidString, jwt: jwt)
                 } else {
                     throw Abort(.unauthorized)
                 }
