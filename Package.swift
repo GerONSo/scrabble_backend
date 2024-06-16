@@ -22,7 +22,8 @@ let package = Package(
                 .product(name: "Vapor", package: "vapor"),
                 .product(name: "Fluent", package: "fluent"),
                 .product(name: "FluentPostgresDriver", package: "fluent-postgres-driver"),
-                .product(name: "JWT", package: "jwt")
+                .product(name: "JWT", package: "jwt"),
+                .product(name: "BCrypt", package: "BCrypt")
             ],
             swiftSettings: swiftSettings
         ),

@@ -184,12 +184,22 @@ func routes(_ app: Application) throws {
     // MARK: -auth
     app.post("register") { req -> EventLoopFuture<User> in
         let userReq = try req.content.decode(UserReq.self)
-        guard let hashedPassword = try? BCrypt.hash(userReq.password) else {
+        guard let hashedPassword = try? Bcrypt.hash(userReq.password) else {
             throw Abort(.internalServerError)
         }
         let user = User(id: UUID(), userId: UUID(), login: userReq.login, password: hashedPassword)
         return user.save(on: req.db).map { user }
     }
+    
+    app.delete("delete") { req -> EventLoopFuture<HTTPStatus> in
+        let userId = try req.parameters.require("userId", as: UUID.self)
+
+        return User.query(on: req.db)
+            .filter(\User.$userId == userId)
+            .delete()
+            .transform(to: .noContent)
+    }
+
 
     app.post("login") { req -> EventLoopFuture<LoginResponse> in
         let userReq = try req.content.decode(UserReq.self)
