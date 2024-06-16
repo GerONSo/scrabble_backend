@@ -81,8 +81,10 @@ final class UserReq: Content {
 final class LoginResponse: Content {
     var jwt: String
     var userid: String
-    init(userid: String, jwt: String) {
+    var login: String
+    init(userid: String, jwt: String, login: String) {
         self.userid = userid
         self.jwt = jwt
+        self.login = login
     }
 }

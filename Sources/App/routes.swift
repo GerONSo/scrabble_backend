@@ -191,13 +191,14 @@ func routes(_ app: Application) throws {
         return user.save(on: req.db).map { user }
     }
     
-    app.delete("delete") { req -> EventLoopFuture<HTTPStatus> in
+    app.delete("deleteUser") { req async throws -> DefaultResponse in
         let userId = try req.parameters.require("userId", as: UUID.self)
 
-        return User.query(on: req.db)
+        try await User.query(on: req.db)
             .filter(\User.$userId == userId)
             .delete()
-            .transform(to: .noContent)
+        
+        return DefaultResponse(success: true)
     }
 
 
@@ -214,7 +215,7 @@ func routes(_ app: Application) throws {
                 if try Bcrypt.verify(userReq.password, created: user.password) {
                     let userToken = User.Payload(userId: user.userId)
                     let jwt = try req.jwt.sign(userToken) as String
-                    return LoginResponse(userid: user.userId.uuidString, jwt: jwt)
+                    return LoginResponse(userid: user.userId.uuidString, jwt: jwt, login: user.login)
                 } else {
                     throw Abort(.unauthorized)
                 }
@@ -232,8 +233,6 @@ func routes(_ app: Application) throws {
 //            }
 //    }
     
-    
-
     auth.get("users") { req in
         // Verify the JWT token and extract the payload
         let userPayload = try req.auth.require(User.Payload.self)
