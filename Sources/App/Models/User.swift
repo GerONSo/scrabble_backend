@@ -77,3 +77,12 @@ final class UserReq: Content {
         self.password = password
     }
 }
+
+final class LoginResponse: Content {
+    var jwt: String
+    var userid: String
+    init(userid: String, jwt: String) {
+        self.userid = userid
+        self.jwt = jwt
+    }
+}
