@@ -38,7 +38,7 @@ func routes(_ app: Application) throws {
         return RoomCreateResponse(roomId: newRoomId)
     }
     
-    auth.get("rooms", "get_users") { req async throws -> RoomGetUsersResponse in
+    auth.post("rooms", "get_users") { req async throws -> RoomGetUsersResponse in
         let request = try req.content.decode(RoomRequest.self)
         guard let roomId = request.roomId.toUUID() else {
             throw Abort(.badRequest)
@@ -59,7 +59,13 @@ func routes(_ app: Application) throws {
             .map {
                 $0.adminId
             }
-        return RoomGetUsersResponse(users: users, adminUserId: adminId)
+        let roomName: String? = try await req.db.query(Room.self)
+            .filter(\.$id == roomId)
+            .first()?.name
+        let inviteCode: String? = try await req.db.query(Room.self)
+            .filter(\.$id == roomId)
+            .first()?.inviteCode
+        return RoomGetUsersResponse(users: users, adminUserId: adminId, roomName: roomName!, inviteCode: inviteCode)
     }
     
     auth.post("rooms", "join") { req async throws -> DefaultResponse in
