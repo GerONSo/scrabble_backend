@@ -69,24 +69,29 @@ func routes(_ app: Application) throws {
         return RoomGetUsersResponse(users: users, adminUserId: adminId, roomName: roomName!, inviteCode: inviteCode)
     }
     
-    auth.post("rooms", "join") { req async throws -> DefaultResponse in
+    auth.post("rooms", "join") { req async throws -> RoomJoinResponse in
         let request = try req.content.decode(RoomJoinRequest.self)
         
         guard let userId = request.userId.toUUID() else {
             throw Abort(.badRequest)
         }
-        
-        guard let roomId = request.roomId.toUUID() else {
-            throw Abort(.badRequest)
+        if (request.roomId == nil && request.inviteCode != nil) {
+            guard let roomId = try await req.db.query(Room.self)
+                .filter(\.$inviteCode == request.inviteCode)
+                .first() else {
+                return RoomJoinResponse(roomId: nil)
+            }
+            let newScore = Score(
+                roomId: roomId.id!,
+                userId: userId,
+                score: "0",
+                tiles: ""
+            )
+            try await newScore.create(on: req.db)
+            return RoomJoinResponse(roomId: roomId.id!)
         }
-        
-        let inviteCode: String? = try await req.db.query(Room.self)
-            .filter(\.$id == roomId)
-            .field(\.$inviteCode)
-            .first()?.inviteCode
-        
-        guard request.inviteCode == inviteCode else {
-            return DefaultResponse(success: false)
+        guard let roomId = request.roomId?.toUUID() else {
+            throw Abort(.badRequest)
         }
         
         let newScore = Score(
@@ -97,7 +102,7 @@ func routes(_ app: Application) throws {
         )
         try await newScore.create(on: req.db)
         
-        return DefaultResponse(success: true)
+        return RoomJoinResponse(roomId: roomId)
     }
     
     auth.post("rooms", "kick") { req async throws -> DefaultResponse in
@@ -115,6 +120,72 @@ func routes(_ app: Application) throws {
             .filter(\.$roomId == roomId)
             .filter(\.$userId == userId)
             .delete()
+        
+        let roomUsersCount = try await req.db.query(Score.self)
+            .filter(\.$roomId == roomId)
+            .all().count
+        if (roomUsersCount == 0) {
+            try await req.db.query(Score.self)
+                .filter(\.$roomId == roomId)
+                .delete()
+            
+            try await req.db.query(Room.self)
+                .filter(\.$id == roomId)
+                .delete()
+            
+            try await req.db.query(Turn.self)
+                .filter(\.$roomId == roomId)
+                .delete()
+            
+            try await req.db.query(Word.self)
+                .filter(\.$roomId == roomId)
+                .delete()
+        }
+        
+        return DefaultResponse(success: true)
+    }
+    
+    auth.post("rooms", "delete") { req async throws -> DefaultResponse in
+        let request = try req.content.decode(RoomRequest.self)
+        
+        guard let roomId = request.roomId.toUUID() else {
+            throw Abort(.badRequest)
+        }
+        
+        try await req.db.query(Score.self)
+            .filter(\.$roomId == roomId)
+            .delete()
+        
+        try await req.db.query(Room.self)
+            .filter(\.$id == roomId)
+            .delete()
+        
+        try await req.db.query(Turn.self)
+            .filter(\.$roomId == roomId)
+            .delete()
+        
+        try await req.db.query(Word.self)
+            .filter(\.$roomId == roomId)
+            .delete()
+        
+        return DefaultResponse(success: true)
+    }
+    
+    auth.post("rooms", "give_admin") { req async throws -> DefaultResponse in
+        let request = try req.content.decode(GiveAdminRequest.self)
+        
+        guard let userId = request.userId.toUUID() else {
+            throw Abort(.badRequest)
+        }
+        
+        guard let roomId = request.roomId.toUUID() else {
+            throw Abort(.badRequest)
+        }
+        
+        try await req.db.query(Room.self)
+            .set(\.$adminId, to: userId)
+            .filter(\.$id == roomId)
+            .update()
         
         return DefaultResponse(success: true)
     }
@@ -192,6 +263,25 @@ func routes(_ app: Application) throws {
             .delete()
         
         return DefaultResponse(success: true)
+    }
+    
+    auth.post("rooms", "scoreboard") { req async throws -> ScoreboardResponse in
+        let request = try req.content.decode(RoomRequest.self)
+        
+        guard let roomId = request.roomId.toUUID() else {
+            throw Abort(.badRequest)
+        }
+        
+        let scoreboard: [ScoreboardDTO] = try await req.db.query(Score.self)
+            .filter(\.$roomId == roomId)
+            .join(User.self, on: \User.$userId == \Score.$userId)
+            .all()
+            .map {
+                let login = try $0.joined(User.self).login
+                return ScoreboardDTO(name: login, score: $0.score)
+            }
+        
+        return ScoreboardResponse(scoreboard: scoreboard)
     }
     
     auth.get("rooms", "all") { req async throws -> RoomAllResponse in
@@ -382,20 +472,8 @@ func routes(_ app: Application) throws {
                 }
             }
     }
-
-    
-//    let auth = app.grouped(User.Payload.authenticator(), User.Payload.guardMiddleware())
-    
-//    auth.get("sign-in") { req in
-//        return User.query(on: req.db)
-//            .all()
-//            .map { users in
-//                return users
-//            }
-//    }
     
     
-
     auth.get("users") { req in
         // Verify the JWT token and extract the payload
         let userPayload = try req.auth.require(User.Payload.self)

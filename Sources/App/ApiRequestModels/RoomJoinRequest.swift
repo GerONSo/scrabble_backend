@@ -9,11 +9,11 @@ import Foundation
 import Vapor
 
 final class RoomJoinRequest: Content {
-    var roomId: String
+    var roomId: String?
     var userId: String
     var inviteCode: String?
     
-    init(roomId: String, userId: String, inviteCode: String? = nil) {
+    init(roomId: String?, userId: String, inviteCode: String? = nil) {
         self.roomId = roomId
         self.userId = userId
         self.inviteCode = inviteCode
